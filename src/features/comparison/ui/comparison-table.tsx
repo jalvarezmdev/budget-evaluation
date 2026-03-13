@@ -33,11 +33,12 @@ export function ComparisonTable({ ranking }: ComparisonTableProps) {
         <TableRow>
           <TableHead>Puesto</TableHead>
           <TableHead>Escenario</TableHead>
-          <TableHead>Patrimonio neto final</TableHead>
-          <TableHead>Efectivo final</TableHead>
-          <TableHead>Inversión final</TableHead>
-          <TableHead>Flujo mensual promedio</TableHead>
-          <TableHead>Tasa de ahorro</TableHead>
+          <TableHead>Flujo libre mensual</TableHead>
+          <TableHead>Meses en negativo</TableHead>
+          <TableHead>Caja mínima</TableHead>
+          <TableHead>Caja final</TableHead>
+          <TableHead>Costo total vehículo</TableHead>
+          <TableHead>Score</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -47,11 +48,12 @@ export function ComparisonTable({ ranking }: ComparisonTableProps) {
               <Badge variant={rankBadgeVariant(item.rank)}>#{item.rank}</Badge>
             </TableCell>
             <TableCell className="font-medium">{item.scenarioName}</TableCell>
-            <TableCell>{formatCurrency(item.endingNetWorth)}</TableCell>
+            <TableCell>{formatCurrency(item.avgMonthlyFreeCash)}</TableCell>
+            <TableCell>{item.negativeMonths}</TableCell>
+            <TableCell>{formatCurrency(item.minCashBalance)}</TableCell>
             <TableCell>{formatCurrency(item.endingCash)}</TableCell>
-            <TableCell>{formatCurrency(item.endingInvestment)}</TableCell>
-            <TableCell>{formatCurrency(item.avgMonthlyCashflow)}</TableCell>
-            <TableCell>{formatPercent(item.savingsRate)}</TableCell>
+            <TableCell>{formatCurrency(item.totalVehicleCost)}</TableCell>
+            <TableCell>{formatPercent(item.affordabilityScore / 100)}</TableCell>
           </TableRow>
         ))}
       </TableBody>

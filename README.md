@@ -11,6 +11,13 @@ Aplicación web para crear y comparar escenarios de presupuesto a 12 meses, prio
 - React Hook Form + Zod
 - Vitest + Testing Library
 
+## Design System (UI)
+
+- Primary: `#38BDF8`
+- Secondary: `#1E293B`
+- Tertiary: `#4ADE80`
+- Neutral: `#0F172A`
+
 ## Scripts
 
 - `npm run dev`: iniciar entorno local

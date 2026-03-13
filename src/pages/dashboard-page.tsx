@@ -31,7 +31,7 @@ export function DashboardPage() {
             </div>
             <h2 className="text-2xl font-bold md:text-3xl">Escenarios de presupuesto</h2>
             <p className="text-sm text-muted-foreground md:text-base">
-              Simula ofertas, cuotas e inversión para decidir qué vehículo encaja mejor con tu bolsillo.
+              Simula ofertas y cuotas para decidir qué vehículo encaja mejor con tu bolsillo.
             </p>
           </div>
 
@@ -58,9 +58,9 @@ export function DashboardPage() {
         </div>
 
         <div className="metric-card">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Mejor patrimonio final</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">Mejor caja final</p>
           <div className="mt-3 flex items-center justify-between">
-            <p className="text-2xl font-semibold">{formatCurrency(bestScenario?.endingNetWorth ?? 0)}</p>
+            <p className="text-2xl font-semibold">{formatCurrency(bestScenario?.endingCash ?? 0)}</p>
             <span className="rounded-full bg-primary/20 p-2 text-primary">
               <CircleDollarSign className="h-4 w-4" />
             </span>

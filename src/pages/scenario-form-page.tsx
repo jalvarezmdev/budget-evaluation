@@ -1,12 +1,14 @@
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ScenarioInputForm } from '@/entities/budget/schema';
+import { isVehicleScenario } from '@/entities/budget/types';
 import {
   useCreateScenarioMutation,
   useScenarioQuery,
   useUpdateScenarioMutation
 } from '@/features/scenarios/api/scenario-queries';
 import { useSettingsQuery } from '@/features/settings/api/settings-queries';
+import { defaultBudgetSettings } from '@/features/settings/model/settings-schema';
 import {
   ScenarioForm,
   defaultScenarioFormValues
@@ -23,24 +25,12 @@ export function ScenarioFormPage({ mode }: ScenarioFormPageProps) {
   const createMutation = useCreateScenarioMutation();
   const updateMutation = useUpdateScenarioMutation();
   const scenarioQuery = useScenarioQuery(mode === 'edit' ? id : undefined);
-  const settingsQuery = useSettingsQuery(mode === 'create');
+  const settingsQuery = useSettingsQuery();
+  const settingsSnapshot = settingsQuery.data ?? defaultBudgetSettings;
 
   const initialValues = useMemo<ScenarioInputForm | undefined>(() => {
     if (mode === 'create') {
-      const settings = settingsQuery.data;
-
-      return {
-        ...defaultScenarioFormValues,
-        monthlySalary: settings?.monthlySalary ?? defaultScenarioFormValues.monthlySalary,
-        monthlyFixedExpenses:
-          settings?.monthlyFixedExpenses ?? defaultScenarioFormValues.monthlyFixedExpenses,
-        monthlyVariableExpenses:
-          settings?.monthlyVariableExpenses ?? defaultScenarioFormValues.monthlyVariableExpenses,
-        otherMonthlyIncome:
-          settings?.otherMonthlyIncome ?? defaultScenarioFormValues.otherMonthlyIncome,
-        otherMonthlyExpenses:
-          settings?.otherMonthlyExpenses ?? defaultScenarioFormValues.otherMonthlyExpenses
-      };
+      return defaultScenarioFormValues;
     }
 
     if (!scenarioQuery.data) {
@@ -48,26 +38,52 @@ export function ScenarioFormPage({ mode }: ScenarioFormPageProps) {
     }
 
     const scenario = scenarioQuery.data;
+
+    if (!isVehicleScenario(scenario)) {
+      return {
+        ...defaultScenarioFormValues,
+        name: scenario.name,
+        initialCash: scenario.initialCash
+      };
+    }
+
     return {
       name: scenario.name,
       initialCash: scenario.initialCash,
-      monthlySalary: scenario.monthlySalary,
-      offerAmount: scenario.offerAmount,
-      monthlyFixedExpenses: scenario.monthlyFixedExpenses,
-      monthlyVariableExpenses: scenario.monthlyVariableExpenses,
-      monthlyInvestmentContribution: scenario.monthlyInvestmentContribution,
-      investmentAnnualReturnRate: scenario.investmentAnnualReturnRate,
-      otherMonthlyIncome: scenario.otherMonthlyIncome ?? 0,
-      otherMonthlyExpenses: scenario.otherMonthlyExpenses ?? 0,
-      horizonMonths: scenario.horizonMonths ?? 12
+      vehiclePrice: scenario.vehicleFinancing.vehiclePrice,
+      financingPlanPercent: scenario.vehicleFinancing.financingPlanPercent,
+      downPaymentPercent: scenario.vehicleFinancing.downPaymentPercent,
+      monthlyInstallment: scenario.vehicleFinancing.monthlyInstallment,
+      financingPeriodMonths: scenario.vehicleFinancing.financingPeriodMonths,
+      specialInstallments: scenario.vehicleFinancing.specialInstallments,
+      vehicleImageDataUrl: scenario.vehicleImageDataUrl ?? ''
     };
-  }, [mode, scenarioQuery.data, settingsQuery.data]);
+  }, [mode, scenarioQuery.data]);
 
   async function handleSubmit(values: ScenarioInputForm) {
+    const input = {
+      name: values.name,
+      initialCash: values.initialCash,
+      vehicleFinancing: {
+        vehiclePrice: values.vehiclePrice,
+        financingPlanPercent: values.financingPlanPercent,
+        downPaymentPercent: values.downPaymentPercent,
+        monthlyInstallment: values.monthlyInstallment,
+        financingPeriodMonths: values.financingPeriodMonths,
+        specialInstallments: values.specialInstallments.map((installment, index) => ({
+          id: installment.id ?? `special-${index}`,
+          month: installment.month,
+          amount: installment.amount
+        }))
+      },
+      financialProfileSnapshot: settingsSnapshot,
+      vehicleImageDataUrl: values.vehicleImageDataUrl
+    };
+
     if (mode === 'create') {
-      await createMutation.mutateAsync(values);
+      await createMutation.mutateAsync(input);
     } else if (id) {
-      await updateMutation.mutateAsync({ id, input: values });
+      await updateMutation.mutateAsync({ id, input });
     }
 
     navigate('/');
@@ -82,7 +98,7 @@ export function ScenarioFormPage({ mode }: ScenarioFormPageProps) {
     );
   }
 
-  if (mode === 'create' && settingsQuery.isLoading) {
+  if (settingsQuery.isLoading) {
     return (
       <Alert>
         <AlertTitle>Cargando configuración base</AlertTitle>
@@ -112,10 +128,20 @@ export function ScenarioFormPage({ mode }: ScenarioFormPageProps) {
       </div>
       <ScenarioForm
         initialValues={initialValues}
+        financialProfile={settingsSnapshot}
         onSubmit={handleSubmit}
         submitLabel={mode === 'create' ? 'Crear escenario' : 'Actualizar escenario'}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
       />
+
+      {mode === 'edit' && scenarioQuery.data && !isVehicleScenario(scenarioQuery.data) ? (
+        <Alert>
+          <AlertTitle>Escenario legado detectado</AlertTitle>
+          <AlertDescription>
+            Este escenario usa el modelo anterior. Completa los nuevos campos vehiculares para convertirlo.
+          </AlertDescription>
+        </Alert>
+      ) : null}
     </div>
   );
 }

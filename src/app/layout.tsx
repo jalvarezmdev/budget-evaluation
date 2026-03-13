@@ -1,13 +1,10 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  Bell,
   Calculator,
   CarFront,
   CircleDollarSign,
   Home,
-  Search,
-  Settings,
-  SlidersHorizontal
+  Settings
 } from 'lucide-react';
 import { APP_NAME } from '@/shared/config/constants';
 import { cn } from '@/shared/lib/utils';
@@ -94,23 +91,6 @@ export function AppLayout() {
               <div>
                 <h1 className="text-xl font-semibold text-foreground md:text-2xl">{page.title}</h1>
                 <p className="text-sm text-muted-foreground">{page.subtitle}</p>
-              </div>
-
-              <div className="flex items-center gap-2 md:gap-3">
-                <div className="relative hidden md:block">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    className="h-10 w-[320px] rounded-full border border-white/15 bg-background/75 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/60 focus:outline-none"
-                    placeholder="Buscar oferta, escenario o gasto..."
-                  />
-                </div>
-                <button className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-background/70 text-muted-foreground transition-colors hover:text-foreground">
-                  <Bell className="h-4 w-4" />
-                </button>
-                <button className="inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-background/70 px-3 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground">
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Ajustes
-                </button>
               </div>
             </div>
 

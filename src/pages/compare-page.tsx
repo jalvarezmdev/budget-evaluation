@@ -30,6 +30,17 @@ export function ComparePage() {
     );
   }
 
+  if (ranking.length === 0) {
+    return (
+      <Alert>
+        <AlertTitle>No hay escenarios vehiculares completos</AlertTitle>
+        <AlertDescription>
+          Tienes escenarios en formato legado. Edita uno y completa los nuevos datos para compararlos.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <div className="space-y-5">
       {best ? (
@@ -40,22 +51,26 @@ export function ComparePage() {
               <Badge variant="success">#{best.rank}</Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
+          <CardContent className="grid gap-4 md:grid-cols-4">
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Escenario</p>
               <p className="text-lg font-semibold">{best.scenarioName}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Patrimonio final</p>
-              <p className="text-lg font-semibold">{formatCurrency(best.endingNetWorth)}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Caja final</p>
+              <p className="text-lg font-semibold">{formatCurrency(best.endingCash)}</p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Tasa de ahorro</p>
-              <p className="text-lg font-semibold">{formatPercent(best.savingsRate)}</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Meses en negativo</p>
+              <p className="text-lg font-semibold">{best.negativeMonths}</p>
             </div>
-            <p className="md:col-span-3 text-sm text-muted-foreground">
-              Esta recomendación prioriza el mayor patrimonio neto final para ayudarte a elegir la oferta de
-              vehículo más saludable para tus finanzas.
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Score de asequibilidad</p>
+              <p className="text-lg font-semibold">{formatPercent(best.affordabilityScore / 100)}</p>
+            </div>
+            <p className="md:col-span-4 text-sm text-muted-foreground">
+              Esta recomendación prioriza la opción con flujo libre más seguro, menor riesgo de meses en negativo
+              y mejor estabilidad de caja.
             </p>
           </CardContent>
         </Card>

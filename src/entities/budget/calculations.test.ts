@@ -1,145 +1,134 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateScenario, projectScenario, rankScenarios } from '@/entities/budget/calculations';
-import type { Scenario, ScenarioInput } from '@/entities/budget/types';
+import type { Scenario, ScenarioInput, VehicleScenario } from '@/entities/budget/types';
 
 const baseInput: ScenarioInput = {
   name: 'Base',
-  initialCash: 1000,
-  monthlySalary: 3000,
-  offerAmount: 500,
-  monthlyFixedExpenses: 1000,
-  monthlyVariableExpenses: 500,
-  monthlyInvestmentContribution: 500,
-  investmentAnnualReturnRate: 0,
-  otherMonthlyIncome: 0,
-  otherMonthlyExpenses: 0,
-  horizonMonths: 12
+  initialCash: 5_000,
+  vehicleFinancing: {
+    vehiclePrice: 20_000,
+    financingPlanPercent: 80,
+    downPaymentPercent: 20,
+    monthlyInstallment: 400,
+    financingPeriodMonths: 12,
+    specialInstallments: []
+  },
+  financialProfileSnapshot: {
+    monthlySalary: 3_000,
+    monthlyFixedExpenses: 1_000,
+    monthlyVariableExpenses: 500,
+    otherMonthlyIncome: 200,
+    otherMonthlyExpenses: 100
+  }
 };
 
-describe('budget calculations', () => {
-  it('projects base scenario with positive values', () => {
+function createVehicleScenario(
+  id: string,
+  overrides: Partial<ScenarioInput> = {}
+): VehicleScenario {
+  return {
+    id,
+    createdAt: '2026-03-13T00:00:00.000Z',
+    updatedAt: '2026-03-13T00:00:00.000Z',
+    modelVersion: 'vehicle-v2',
+    ...baseInput,
+    ...overrides
+  };
+}
+
+describe('budget calculations v2', () => {
+  it('projects base scenario with expected balances', () => {
     const projection = projectScenario(baseInput);
+    const first = projection[0];
     const last = projection.at(-1);
 
     expect(projection).toHaveLength(12);
-    expect(last?.cashBalance).toBe(13500);
-    expect(last?.investmentBalance).toBe(6000);
-    expect(last?.netWorth).toBe(19500);
+    expect(first?.monthlyFreeCash).toBe(1_200);
+    expect(first?.cashBalance).toBe(2_200);
+    expect(last?.cashBalance).toBe(15_400);
   });
 
-  it('applies offer only as initial one-time amount', () => {
-    const withOffer = evaluateScenario(baseInput);
-    const withoutOffer = evaluateScenario({ ...baseInput, offerAmount: 0 });
-
-    expect(withOffer.endingNetWorth - withoutOffer.endingNetWorth).toBe(500);
-  });
-
-  it('grows investment balance when return rate exists', () => {
-    const withReturn = evaluateScenario({
+  it('applies special installments only on configured months', () => {
+    const projection = projectScenario({
       ...baseInput,
-      investmentAnnualReturnRate: 0.12
-    });
-    const withoutReturn = evaluateScenario({
-      ...baseInput,
-      investmentAnnualReturnRate: 0
-    });
-
-    expect(withReturn.endingInvestment).toBeGreaterThan(withoutReturn.endingInvestment);
-  });
-
-  it('handles scenario with zero return correctly', () => {
-    const evaluation = evaluateScenario({ ...baseInput, investmentAnnualReturnRate: 0 });
-
-    expect(evaluation.endingInvestment).toBe(6000);
-  });
-
-  it('ranks scenarios by net worth then cashflow then expense ratio', () => {
-    const scenarios: Scenario[] = [
-      {
-        id: 'a',
-        createdAt: '2026-03-13T00:00:00.000Z',
-        updatedAt: '2026-03-13T00:00:00.000Z',
-        name: 'A',
-        initialCash: 0,
-        monthlySalary: 100,
-        offerAmount: 0,
-        monthlyFixedExpenses: 0,
-        monthlyVariableExpenses: 0,
-        monthlyInvestmentContribution: 0,
-        investmentAnnualReturnRate: 0,
-        otherMonthlyIncome: 0,
-        otherMonthlyExpenses: 0,
-        horizonMonths: 1
-      },
-      {
-        id: 'e',
-        createdAt: '2026-03-13T00:00:00.000Z',
-        updatedAt: '2026-03-13T00:00:00.000Z',
-        name: 'E',
-        initialCash: 0,
-        monthlySalary: 500,
-        offerAmount: 0,
-        monthlyFixedExpenses: 400,
-        monthlyVariableExpenses: 0,
-        monthlyInvestmentContribution: 0,
-        investmentAnnualReturnRate: 0,
-        otherMonthlyIncome: 0,
-        otherMonthlyExpenses: 0,
-        horizonMonths: 1
-      },
-      {
-        id: 'd',
-        createdAt: '2026-03-13T00:00:00.000Z',
-        updatedAt: '2026-03-13T00:00:00.000Z',
-        name: 'D',
-        initialCash: 0,
-        monthlySalary: 1000,
-        offerAmount: 0,
-        monthlyFixedExpenses: 900,
-        monthlyVariableExpenses: 0,
-        monthlyInvestmentContribution: 0,
-        investmentAnnualReturnRate: 0,
-        otherMonthlyIncome: 0,
-        otherMonthlyExpenses: 0,
-        horizonMonths: 1
-      },
-      {
-        id: 'b',
-        createdAt: '2026-03-13T00:00:00.000Z',
-        updatedAt: '2026-03-13T00:00:00.000Z',
-        name: 'B',
-        initialCash: 100,
-        monthlySalary: 0,
-        offerAmount: 0,
-        monthlyFixedExpenses: 0,
-        monthlyVariableExpenses: 0,
-        monthlyInvestmentContribution: 0,
-        investmentAnnualReturnRate: 0,
-        otherMonthlyIncome: 0,
-        otherMonthlyExpenses: 0,
-        horizonMonths: 1
+      vehicleFinancing: {
+        ...baseInput.vehicleFinancing,
+        specialInstallments: [{ id: 's1', month: 2, amount: 500 }]
       }
-    ];
+    });
 
-    const ranked = rankScenarios(scenarios);
-
-    expect(ranked.map((item) => item.scenarioId)).toEqual(['a', 'e', 'd', 'b']);
-    expect(ranked[0]?.rank).toBe(1);
+    expect(projection[0]?.vehiclePayment).toBe(400);
+    expect(projection[1]?.specialInstallmentAmount).toBe(500);
+    expect(projection[1]?.vehiclePayment).toBe(900);
+    expect(projection[2]?.vehiclePayment).toBe(400);
   });
 
-  it('supports negative cashflow and savings rate', () => {
+  it('treats month 1 special installment as part of initial payment', () => {
+    const projection = projectScenario({
+      ...baseInput,
+      vehicleFinancing: {
+        ...baseInput.vehicleFinancing,
+        specialInstallments: [{ id: 's-initial', month: 1, amount: 600 }]
+      }
+    });
+
+    const firstMonth = projection[0];
+
+    expect(firstMonth?.specialInstallmentAmount).toBe(0);
+    expect(firstMonth?.vehiclePayment).toBe(400);
+    expect(firstMonth?.cashBalance).toBe(1_600);
+  });
+
+  it('flags risk when down payment exceeds initial cash', () => {
     const evaluation = evaluateScenario({
       ...baseInput,
-      monthlySalary: 1000,
-      monthlyFixedExpenses: 800,
-      monthlyVariableExpenses: 400,
-      monthlyInvestmentContribution: 0,
-      offerAmount: 0,
-      initialCash: 0
+      initialCash: 1_000,
+      vehicleFinancing: {
+        ...baseInput.vehicleFinancing,
+        vehiclePrice: 30_000,
+        downPaymentPercent: 30,
+        monthlyInstallment: 1_500
+      }
     });
 
-    expect(evaluation.avgMonthlyCashflow).toBe(-200);
-    expect(evaluation.savingsRate).toBe(-0.2);
+    expect(evaluation.minCashBalance).toBeLessThan(0);
+    expect(evaluation.negativeMonths).toBeGreaterThan(0);
+  });
+
+  it('ranks scenarios prioritizing cashflow safety', () => {
+    const safeScenario = createVehicleScenario('safe', {
+      name: 'Seguro',
+      vehicleFinancing: {
+        ...baseInput.vehicleFinancing,
+        monthlyInstallment: 300
+      }
+    });
+
+    const riskyScenario = createVehicleScenario('risky', {
+      name: 'Riesgoso',
+      initialCash: 0,
+      vehicleFinancing: {
+        ...baseInput.vehicleFinancing,
+        monthlyInstallment: 2_300,
+        downPaymentPercent: 40,
+        vehiclePrice: 35_000
+      }
+    });
+
+    const legacyScenario: Scenario = {
+      id: 'legacy',
+      createdAt: '2026-03-13T00:00:00.000Z',
+      updatedAt: '2026-03-13T00:00:00.000Z',
+      modelVersion: 'legacy-v1',
+      name: 'Legacy',
+      initialCash: 0,
+      legacyData: {}
+    };
+
+    const ranking = rankScenarios([safeScenario, riskyScenario, legacyScenario]);
+
+    expect(ranking).toHaveLength(2);
+    expect(ranking.map((item) => item.scenarioId)).toEqual(['safe', 'risky']);
+    expect(ranking[0]?.rank).toBe(1);
   });
 });
-

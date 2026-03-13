@@ -4,7 +4,8 @@ import { settingsRepository } from '@/features/settings/api/settings-repository'
 
 describe('settingsRepository', () => {
   beforeEach(() => {
-    localStorage.clear();
+    localStorage.removeItem(STORAGE_KEYS.settings);
+    localStorage.removeItem(STORAGE_KEYS.meta);
   });
 
   it('returns default settings when there is no stored data', async () => {
@@ -56,4 +57,3 @@ describe('settingsRepository', () => {
     });
   });
 });
-

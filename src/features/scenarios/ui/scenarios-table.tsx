@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import type { RankedScenario, Scenario } from '@/entities/budget/types';
+import { isVehicleScenario, type RankedScenario, type Scenario } from '@/entities/budget/types';
 import { formatCurrency } from '@/shared/lib/currency';
 import { formatDate } from '@/shared/lib/date';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,16 @@ type ScenariosTableProps = {
 
 export function ScenariosTable({ scenarios, ranking, onDelete, deletingId }: ScenariosTableProps) {
   const rankingById = new Map(ranking.map((item) => [item.scenarioId, item]));
+  const orderedScenarios = [...scenarios].sort((left, right) => {
+    const leftRank = rankingById.get(left.id)?.rank ?? Number.POSITIVE_INFINITY;
+    const rightRank = rankingById.get(right.id)?.rank ?? Number.POSITIVE_INFINITY;
+
+    if (leftRank !== rightRank) {
+      return leftRank - rightRank;
+    }
+
+    return right.updatedAt.localeCompare(left.updatedAt);
+  });
 
   return (
     <Table>
@@ -32,20 +42,25 @@ export function ScenariosTable({ scenarios, ranking, onDelete, deletingId }: Sce
         <TableRow>
           <TableHead>Nombre</TableHead>
           <TableHead>Actualizado</TableHead>
-          <TableHead>Patrimonio neto final</TableHead>
+          <TableHead>Caja final</TableHead>
           <TableHead>Puesto</TableHead>
           <TableHead className="text-right">Acciones</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {scenarios.map((scenario) => {
+        {orderedScenarios.map((scenario) => {
           const evaluation = rankingById.get(scenario.id);
 
           return (
             <TableRow key={scenario.id} className={evaluation?.rank === 1 ? 'bg-tertiary/10' : undefined}>
-              <TableCell className="font-medium">{scenario.name}</TableCell>
+              <TableCell className="font-medium">
+                <div className="flex items-center gap-2">
+                  <span>{scenario.name}</span>
+                  {!isVehicleScenario(scenario) ? <Badge variant="outline">Legacy</Badge> : null}
+                </div>
+              </TableCell>
               <TableCell>{formatDate(scenario.updatedAt)}</TableCell>
-              <TableCell>{formatCurrency(evaluation?.endingNetWorth ?? 0)}</TableCell>
+              <TableCell>{formatCurrency(evaluation?.endingCash ?? 0)}</TableCell>
               <TableCell>
                 {evaluation?.rank ? <Badge variant={evaluation.rank === 1 ? 'success' : 'secondary'}>#{evaluation.rank}</Badge> : '-'}
               </TableCell>
